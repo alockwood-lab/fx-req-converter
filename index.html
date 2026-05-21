@@ -68,7 +68,7 @@
 <div class="header">
   <div class="header-left">
     <h1>FX REQ Converter</h1>
-    <p>Indeed Intercompany FX Rates | Income Statement Average Rate | As of April 30, 2026</p>
+    <p id="rateInfo">Indeed Intercompany FX Rates | Income Statement Average Rate | As of April 30, 2026</p>
   </div>
   <div class="header-logo">
     <img src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Indeed_logo.svg" alt="Indeed" height="36" style="filter: brightness(0) invert(1);">
@@ -147,7 +147,9 @@
 </div>
 
 <script>
-const FX_RATES = {
+const APPS_SCRIPT_URL = 'https://script.google.com/a/macros/indeed.com/s/AKfycbzKBMLE6W3zJbG2fUfnuCtXPQGt1CLc9Bx73mp37H2Oso-10lH37grfn_Vf9BSr8VZ5/exec';
+
+let FX_RATES = {
   "AED": 0.272266573,
   "AUD": 0.70526537,
   "BRL": 0.197520018,
@@ -180,6 +182,9 @@ const FX_RATES = {
   "ZAR": 0.060185416
 };
 
+let RATE_DATE = 'April 30, 2026';
+let ratesSource = 'hardcoded';
+
 const CURRENCY_NAMES = {
   "AED": "UAE Dirham", "AUD": "Australian Dollar", "BRL": "Brazilian Real",
   "CAD": "Canadian Dollar", "CHF": "Swiss Franc", "CNY": "Chinese Yuan",
@@ -202,30 +207,64 @@ const CURRENCY_SYMBOLS = {
   "SAR": "SAR", "SEK": "SEK", "SGD": "S$", "THB": "฿", "ZAR": "ZAR"
 };
 
-// Populate currency dropdown
-const select = document.getElementById('currency');
 const commonCurrencies = ['JPY', 'GBP', 'EUR', 'SGD', 'CAD', 'AUD', 'INR'];
-const optGroupCommon = document.createElement('optgroup');
-optGroupCommon.label = 'Common';
-commonCurrencies.forEach(code => {
-  const opt = document.createElement('option');
-  opt.value = code;
-  opt.textContent = `${code} - ${CURRENCY_NAMES[code]}`;
-  optGroupCommon.appendChild(opt);
-});
-select.appendChild(optGroupCommon);
 
-const optGroupAll = document.createElement('optgroup');
-optGroupAll.label = 'All Currencies';
-Object.keys(FX_RATES).sort().forEach(code => {
-  if (!commonCurrencies.includes(code)) {
+function populateCurrencyDropdown() {
+  const select = document.getElementById('currency');
+  const currentVal = select.value;
+  select.innerHTML = '';
+
+  const optGroupCommon = document.createElement('optgroup');
+  optGroupCommon.label = 'Common';
+  commonCurrencies.forEach(code => {
+    if (!FX_RATES[code]) return;
     const opt = document.createElement('option');
     opt.value = code;
-    opt.textContent = `${code} - ${CURRENCY_NAMES[code]}`;
-    optGroupAll.appendChild(opt);
+    opt.textContent = `${code} - ${CURRENCY_NAMES[code] || code}`;
+    optGroupCommon.appendChild(opt);
+  });
+  select.appendChild(optGroupCommon);
+
+  const optGroupAll = document.createElement('optgroup');
+  optGroupAll.label = 'All Currencies';
+  Object.keys(FX_RATES).sort().forEach(code => {
+    if (!commonCurrencies.includes(code)) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = `${code} - ${CURRENCY_NAMES[code] || code}`;
+      optGroupAll.appendChild(opt);
+    }
+  });
+  select.appendChild(optGroupAll);
+
+  if (currentVal && FX_RATES[currentVal]) select.value = currentVal;
+}
+
+function updateRateInfo() {
+  const el = document.getElementById('rateInfo');
+  const src = ratesSource === 'live' ? 'Live' : 'Offline';
+  el.textContent = `Indeed Intercompany FX Rates | Income Statement Average Rate | As of ${RATE_DATE} (${src})`;
+}
+
+async function fetchLiveRates() {
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.rates && Object.keys(data.rates).length > 0) {
+      FX_RATES = data.rates;
+      if (data.rateDate) RATE_DATE = data.rateDate;
+      ratesSource = 'live';
+      populateCurrencyDropdown();
+      updateRateInfo();
+    }
+  } catch (e) {
+    console.log('Using hardcoded fallback rates:', e.message);
   }
-});
-select.appendChild(optGroupAll);
+}
+
+populateCurrencyDropdown();
+fetchLiveRates();
 
 function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
@@ -304,7 +343,7 @@ function convert() {
   const sym = CURRENCY_SYMBOLS[currency] || currency;
 
   // Update summary
-  document.getElementById('rateBadge').innerHTML = `<strong>${currency} &rarr; USD:</strong>&nbsp;${rate.toFixed(6)}&nbsp;&nbsp;|&nbsp;&nbsp;As of April 30, 2026&nbsp;&nbsp;|&nbsp;&nbsp;${totalDays} days`;
+  document.getElementById('rateBadge').innerHTML = `<strong>${currency} &rarr; USD:</strong>&nbsp;${rate.toFixed(6)}&nbsp;&nbsp;|&nbsp;&nbsp;As of ${RATE_DATE}&nbsp;&nbsp;|&nbsp;&nbsp;${totalDays} days`;
   document.getElementById('totalLocal').textContent = formatCurrency(totalCost, sym);
   document.getElementById('totalUSD').textContent = formatCurrency(totalUSD, '$');
   document.getElementById('monthlyUSD').textContent = formatCurrency(dailyUSD * 30, '$');
