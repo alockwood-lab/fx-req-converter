@@ -35,7 +35,7 @@
   .results { display: none; }
   .results.show { display: block; }
 
-  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
   .summary-item { background: #f8f9ff; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e8ecf4; }
   .summary-item .label { font-size: 11px; font-weight: 600; color: #636e72; text-transform: uppercase; letter-spacing: 0.5px; }
   .summary-item .value { font-size: 22px; font-weight: 700; color: #1a2b5f; margin-top: 4px; }
@@ -114,11 +114,6 @@
         <div class="summary-item">
           <div class="label">Total (USD)</div>
           <div class="value" id="totalUSD"></div>
-        </div>
-        <div class="summary-item">
-          <div class="label">Monthly (USD)</div>
-          <div class="value" id="monthlyUSD"></div>
-          <div class="sub" id="monthCount"></div>
         </div>
       </div>
     </div>
@@ -347,8 +342,6 @@ function convert() {
   document.getElementById('rateBadge').innerHTML = `<strong>${currency} &rarr; USD:</strong>&nbsp;${rate.toFixed(6)}&nbsp;&nbsp;|&nbsp;&nbsp;As of ${RATE_DATE}&nbsp;&nbsp;|&nbsp;&nbsp;${totalDays} days`;
   document.getElementById('totalLocal').textContent = formatCurrency(totalCost, sym);
   document.getElementById('totalUSD').textContent = formatCurrency(totalUSD, '$');
-  document.getElementById('monthlyUSD').textContent = formatCurrency(dailyUSD * 30, '$');
-  document.getElementById('monthCount').textContent = `${months.length} month${months.length > 1 ? 's' : ''} (${totalDays} days)`;
 
   // Build table
   const tbody = document.getElementById('breakdownBody');
