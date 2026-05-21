@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FX REQ Converter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f6fa; color: #2d3436; min-height: 100vh; }
+
+  .header { background: #1a2b5f; color: white; padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; }
+  .header-left h1 { font-size: 24px; font-weight: 600; }
+  .header-left p { font-size: 13px; color: #a0aec0; margin-top: 4px; }
+  .header-logo svg { height: 32px; }
+
+  .container { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+
+  .card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px; }
+  .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #1a2b5f; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 13px; font-weight: 600; color: #636e72; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select { padding: 10px 14px; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 15px; transition: border-color 0.2s; }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: #1a2b5f; box-shadow: 0 0 0 3px rgba(26,43,95,0.1); }
+
+  .btn { background: #1a2b5f; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 8px; }
+  .btn:hover { background: #2d4a8c; }
+  .btn-secondary { background: #636e72; margin-left: 8px; }
+  .btn-secondary:hover { background: #7a8a8e; }
+  .btn-copy { background: #00b894; font-size: 13px; padding: 8px 16px; }
+  .btn-copy:hover { background: #00a381; }
+
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .summary-item { background: #f8f9ff; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e8ecf4; }
+  .summary-item .label { font-size: 11px; font-weight: 600; color: #636e72; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-item .value { font-size: 22px; font-weight: 700; color: #1a2b5f; margin-top: 4px; }
+  .summary-item .sub { font-size: 12px; color: #636e72; margin-top: 2px; }
+
+  .rate-badge { display: inline-flex; align-items: center; background: #dfe6e9; border-radius: 6px; padding: 6px 12px; font-size: 13px; color: #2d3436; margin-bottom: 16px; }
+  .rate-badge strong { margin-right: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th { background: #1a2b5f; color: white; padding: 10px 14px; text-align: right; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  thead th:first-child { text-align: left; border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+  tbody td { padding: 10px 14px; text-align: right; border-bottom: 1px solid #f0f0f0; }
+  tbody td:first-child { text-align: left; font-weight: 500; }
+  tbody tr:hover { background: #f8f9ff; }
+  tfoot td { padding: 12px 14px; text-align: right; font-weight: 700; border-top: 2px solid #1a2b5f; background: #f8f9ff; }
+  tfoot td:first-child { text-align: left; }
+
+  .actions { display: flex; justify-content: flex-end; margin-top: 16px; gap: 8px; }
+  .copied { background: #00b894 !important; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>FX REQ Converter</h1>
+    <p>Indeed Intercompany FX Rates | Income Statement Average Rate | As of April 30, 2026</p>
+  </div>
+  <div class="header-logo">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Indeed_logo.svg" alt="Indeed" height="36" style="filter: brightness(0) invert(1);">
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h2>REQ Details</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Total Cost (Local Currency)</label>
+        <input type="text" id="totalCost" placeholder="e.g. 15000000" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label>Currency</label>
+        <select id="currency"></select>
+      </div>
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="date" id="endDate">
+      </div>
+      <div class="form-group full" style="flex-direction: row; align-items: flex-end;">
+        <button class="btn" onclick="convert()">Convert to USD</button>
+        <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="card">
+      <h2>Conversion Summary</h2>
+      <div class="rate-badge" id="rateBadge"></div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="label">Total (Local)</div>
+          <div class="value" id="totalLocal"></div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Total (USD)</div>
+          <div class="value" id="totalUSD"></div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Monthly (USD)</div>
+          <div class="value" id="monthlyUSD"></div>
+          <div class="sub" id="monthCount"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Monthly Breakdown</h2>
+      <div style="overflow-x: auto;">
+        <table id="breakdownTable">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Local Amount</th>
+              <th>USD Amount</th>
+            </tr>
+          </thead>
+          <tbody id="breakdownBody"></tbody>
+          <tfoot id="breakdownFoot"></tfoot>
+        </table>
+      </div>
+      <div class="actions">
+        <button class="btn btn-copy" onclick="copyTable()">Copy Table</button>
+        <button class="btn btn-copy" onclick="copyUSDOnly()">Copy USD Only</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const FX_RATES = {
+  "AED": 0.272266573,
+  "AUD": 0.70526537,
+  "BRL": 0.197520018,
+  "CAD": 0.725078508,
+  "CHF": 1.266662951,
+  "CNY": 0.146052436,
+  "CZK": 0.047812934,
+  "DKK": 0.156143359,
+  "EUR": 1.166824382,
+  "GBP": 1.341225102,
+  "HKD": 0.127647831,
+  "HRK": 0.154864183,
+  "IDR": 0.0000584585,
+  "ILS": 0.327749573,
+  "INR": 0.010711165,
+  "JPY": 0.006278534,
+  "KRW": 0.000672084,
+  "MXN": 0.057049892,
+  "MYR": 0.251118797,
+  "NOK": 0.105169159,
+  "NZD": 0.582262988,
+  "PHP": 0.016608224,
+  "PLN": 0.27424873,
+  "QAR": 0.27427295,
+  "RUB": 0.012905885,
+  "SAR": 0.26650591,
+  "SEK": 0.107508247,
+  "SGD": 0.782539968,
+  "THB": 0.030936917,
+  "ZAR": 0.060185416
+};
+
+const CURRENCY_NAMES = {
+  "AED": "UAE Dirham", "AUD": "Australian Dollar", "BRL": "Brazilian Real",
+  "CAD": "Canadian Dollar", "CHF": "Swiss Franc", "CNY": "Chinese Yuan",
+  "CZK": "Czech Koruna", "DKK": "Danish Krone", "EUR": "Euro",
+  "GBP": "British Pound", "HKD": "Hong Kong Dollar", "HRK": "Croatian Kuna",
+  "IDR": "Indonesian Rupiah", "ILS": "Israeli Shekel", "INR": "Indian Rupee",
+  "JPY": "Japanese Yen", "KRW": "South Korean Won", "MXN": "Mexican Peso",
+  "MYR": "Malaysian Ringgit", "NOK": "Norwegian Krone", "NZD": "New Zealand Dollar",
+  "PHP": "Philippine Peso", "PLN": "Polish Zloty", "QAR": "Qatari Riyal",
+  "RUB": "Russian Ruble", "SAR": "Saudi Riyal", "SEK": "Swedish Krona",
+  "SGD": "Singapore Dollar", "THB": "Thai Baht", "ZAR": "South African Rand"
+};
+
+const CURRENCY_SYMBOLS = {
+  "AED": "AED", "AUD": "A$", "BRL": "R$", "CAD": "C$", "CHF": "CHF",
+  "CNY": "CN¥", "CZK": "CZK", "DKK": "DKK", "EUR": "€", "GBP": "£",
+  "HKD": "HK$", "HRK": "HRK", "IDR": "IDR", "ILS": "₪", "INR": "₹",
+  "JPY": "¥", "KRW": "₩", "MXN": "MX$", "MYR": "MYR", "NOK": "NOK",
+  "NZD": "NZ$", "PHP": "₱", "PLN": "PLN", "QAR": "QAR", "RUB": "RUB",
+  "SAR": "SAR", "SEK": "SEK", "SGD": "S$", "THB": "฿", "ZAR": "ZAR"
+};
+
+// Populate currency dropdown
+const select = document.getElementById('currency');
+const commonCurrencies = ['JPY', 'GBP', 'EUR', 'SGD', 'CAD', 'AUD', 'INR'];
+const optGroupCommon = document.createElement('optgroup');
+optGroupCommon.label = 'Common';
+commonCurrencies.forEach(code => {
+  const opt = document.createElement('option');
+  opt.value = code;
+  opt.textContent = `${code} - ${CURRENCY_NAMES[code]}`;
+  optGroupCommon.appendChild(opt);
+});
+select.appendChild(optGroupCommon);
+
+const optGroupAll = document.createElement('optgroup');
+optGroupAll.label = 'All Currencies';
+Object.keys(FX_RATES).sort().forEach(code => {
+  if (!commonCurrencies.includes(code)) {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = `${code} - ${CURRENCY_NAMES[code]}`;
+    optGroupAll.appendChild(opt);
+  }
+});
+select.appendChild(optGroupAll);
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function getMonthBreakdown(start, end) {
+  const months = [];
+  let current = new Date(start.getFullYear(), start.getMonth(), 1);
+  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+  let totalDays = 0;
+
+  while (current <= endMonth) {
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+
+    let dayStart = 1;
+    let dayEnd = daysInMonth;
+
+    if (year === start.getFullYear() && month === start.getMonth()) {
+      dayStart = start.getDate();
+    }
+    if (year === end.getFullYear() && month === end.getMonth()) {
+      dayEnd = end.getDate();
+    }
+
+    const activeDays = dayEnd - dayStart + 1;
+    totalDays += activeDays;
+
+    months.push({
+      date: new Date(current),
+      daysInMonth: daysInMonth,
+      activeDays: activeDays,
+      isPartial: activeDays < daysInMonth
+    });
+
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  months.forEach(m => m.weight = m.activeDays / totalDays);
+  return { months, totalDays };
+}
+
+function formatCurrency(amount, symbol) {
+  if (symbol === '$') {
+    return '$' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return symbol + ' ' + amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatMonth(date) {
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function convert() {
+  const costRaw = document.getElementById('totalCost').value.replace(/[^0-9.]/g, '');
+  const totalCost = parseFloat(costRaw);
+  const currency = document.getElementById('currency').value;
+  const startDate = new Date(document.getElementById('startDate').value + 'T00:00:00');
+  const endDate = new Date(document.getElementById('endDate').value + 'T00:00:00');
+
+  if (isNaN(totalCost) || !currency || isNaN(startDate) || isNaN(endDate)) {
+    alert('Please fill in all fields.');
+    return;
+  }
+  if (endDate < startDate) {
+    alert('End date must be after start date.');
+    return;
+  }
+
+  const rate = FX_RATES[currency];
+  const { months, totalDays } = getMonthBreakdown(startDate, endDate);
+  const totalUSD = totalCost * rate;
+  const dailyLocal = totalCost / totalDays;
+  const dailyUSD = totalUSD / totalDays;
+  const sym = CURRENCY_SYMBOLS[currency] || currency;
+
+  // Update summary
+  document.getElementById('rateBadge').innerHTML = `<strong>${currency} &rarr; USD:</strong>&nbsp;${rate.toFixed(6)}&nbsp;&nbsp;|&nbsp;&nbsp;As of April 30, 2026&nbsp;&nbsp;|&nbsp;&nbsp;${totalDays} days`;
+  document.getElementById('totalLocal').textContent = formatCurrency(totalCost, sym);
+  document.getElementById('totalUSD').textContent = formatCurrency(totalUSD, '$');
+  document.getElementById('monthlyUSD').textContent = formatCurrency(dailyUSD * 30, '$');
+  document.getElementById('monthCount').textContent = `${months.length} month${months.length > 1 ? 's' : ''} (${totalDays} days)`;
+
+  // Build table
+  const tbody = document.getElementById('breakdownBody');
+  tbody.innerHTML = '';
+  let runningLocal = 0;
+  let runningUSD = 0;
+  months.forEach(m => {
+    const localAmt = dailyLocal * m.activeDays;
+    const usdAmt = dailyUSD * m.activeDays;
+    runningLocal += localAmt;
+    runningUSD += usdAmt;
+    const partial = m.isPartial ? ` (${m.activeDays}d)` : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${formatMonth(m.date)}${partial}</td>
+      <td>${formatCurrency(localAmt, sym)}</td>
+      <td>${formatCurrency(usdAmt, '$')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const tfoot = document.getElementById('breakdownFoot');
+  tfoot.innerHTML = `
+    <tr>
+      <td>Total</td>
+      <td>${formatCurrency(totalCost, sym)}</td>
+      <td>${formatCurrency(totalUSD, '$')}</td>
+    </tr>
+  `;
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearForm() {
+  document.getElementById('totalCost').value = '';
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  document.getElementById('results').classList.remove('show');
+}
+
+function copyTable() {
+  const table = document.getElementById('breakdownTable');
+  let text = 'Month\tLocal Amount\tUSD Amount\n';
+  const rows = table.querySelectorAll('tbody tr, tfoot tr');
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    text += Array.from(cells).map(c => c.textContent.trim()).join('\t') + '\n';
+  });
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy Table'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function copyUSDOnly() {
+  const rows = document.querySelectorAll('#breakdownBody tr');
+  let text = 'Month\tUSD Amount\n';
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    text += cells[0].textContent.trim() + '\t' + cells[2].textContent.trim() + '\n';
+  });
+  const footCells = document.querySelector('#breakdownFoot tr').querySelectorAll('td');
+  text += footCells[0].textContent.trim() + '\t' + footCells[2].textContent.trim() + '\n';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy USD Only'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// Allow commas in cost input
+document.getElementById('totalCost').addEventListener('input', function(e) {
+  let val = e.target.value.replace(/[^0-9.]/g, '');
+  if (val) {
+    const parts = val.split('.');
+    parts[0] = parseInt(parts[0]).toLocaleString('en-US');
+    e.target.value = parts.join('.');
+  }
+});
+</script>
+
+</body>
+</html>
