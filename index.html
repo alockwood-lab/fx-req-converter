@@ -139,6 +139,7 @@
         </table>
       </div>
       <div class="actions">
+        <button class="btn btn-copy" onclick="copyForForecast()" style="background:#1a2b5f;">Copy for Forecast</button>
         <button class="btn btn-copy" onclick="copyTable()">Copy Table</button>
         <button class="btn btn-copy" onclick="copyUSDOnly()">Copy USD Only</button>
       </div>
@@ -387,6 +388,22 @@ function clearForm() {
   document.getElementById('startDate').value = '';
   document.getElementById('endDate').value = '';
   document.getElementById('results').classList.remove('show');
+}
+
+function copyForForecast() {
+  const rows = document.querySelectorAll('#breakdownBody tr');
+  const values = [];
+  rows.forEach(row => {
+    const usdCell = row.querySelectorAll('td')[2].textContent.trim();
+    const num = usdCell.replace(/[^0-9.-]/g, '');
+    values.push(num);
+  });
+  navigator.clipboard.writeText(values.join('\t')).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy for Forecast'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 function copyTable() {
